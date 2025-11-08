@@ -1,0 +1,486 @@
+[{
+  "table_name": "atributo_propiedad_valores",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "atributo_propiedad_valores",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "atributo_propiedad_valores",
+  "column_name": "id_atributo",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "atributo_propiedad_valores",
+  "column_name": "valor",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "atributos_propiedad",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "atributos_propiedad",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "atributos_propiedad",
+  "column_name": "tipo",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_audios",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_audios",
+  "column_name": "codigo",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_audios",
+  "column_name": "descripcion",
+  "data_type": "text",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_audios",
+  "column_name": "instruccion_ia",
+  "data_type": "text",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_ciudades",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_ciudades",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_ciudades",
+  "column_name": "id_departamento",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_departamentos",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_departamentos",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_departamentos",
+  "column_name": "id_pais",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "descripcion",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "activo",
+  "data_type": "boolean",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "created_at",
+  "data_type": "timestamp without time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_categoria",
+  "column_name": "updated_at",
+  "data_type": "timestamp without time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "categoria_id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "descripcion",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "activo",
+  "data_type": "boolean",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "created_at",
+  "data_type": "timestamp without time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_inmueble_tipo",
+  "column_name": "updated_at",
+  "data_type": "timestamp without time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "cat_paises",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "cat_paises",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "favoritos",
+  "column_name": "id_usuario",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "favoritos",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "favoritos",
+  "column_name": "fecha_creacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "id_usuario",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "id_cat_audio",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "url_audio",
+  "data_type": "text",
+  "is_nullable": "NO"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "estado",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "texto_transcrito",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "descripcion_generada",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "error_mensaje",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "fecha_creacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "procesamientos_audio",
+  "column_name": "fecha_actualizacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad",
+  "column_name": "id_propietario",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad",
+  "column_name": "titulo",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad",
+  "column_name": "descripcion",
+  "data_type": "text",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "precio_venta",
+  "data_type": "numeric",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "precio_alquiler",
+  "data_type": "numeric",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "superficie_total",
+  "data_type": "integer",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "fecha_creacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "fecha_actualizacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "id_ubicacion",
+  "data_type": "uuid",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "fecha_publicacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "expira_en",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "visitas",
+  "data_type": "integer",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "destacada",
+  "data_type": "boolean",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "estado_publicacion",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad",
+  "column_name": "id_inmueble_tipo",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "telefono",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "email",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_contactos",
+  "column_name": "tipo_contacto",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_detalles",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_detalles",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_detalles",
+  "column_name": "numero_habitaciones",
+  "data_type": "smallint",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_detalles",
+  "column_name": "numero_banos",
+  "data_type": "smallint",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_detalles",
+  "column_name": "otros_detalles",
+  "data_type": "jsonb",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "id_propiedad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "url_imagen",
+  "data_type": "text",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "descripcion_alt",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "orden",
+  "data_type": "smallint",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "fecha_creacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_imagenes",
+  "column_name": "es_principal",
+  "data_type": "boolean",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "direccion",
+  "data_type": "text",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "barrio",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "codigo_postal",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "latitud",
+  "data_type": "numeric",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "longitud",
+  "data_type": "numeric",
+  "is_nullable": "NO"
+}, {
+  "table_name": "propiedad_ubicacion",
+  "column_name": "id_ciudad",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "usuarios",
+  "column_name": "id",
+  "data_type": "uuid",
+  "is_nullable": "NO"
+}, {
+  "table_name": "usuarios",
+  "column_name": "email",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "usuarios",
+  "column_name": "password_hash",
+  "data_type": "character varying",
+  "is_nullable": "NO"
+}, {
+  "table_name": "usuarios",
+  "column_name": "telefono",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "fecha_creacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "fecha_actualizacion",
+  "data_type": "timestamp with time zone",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "nombre",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "apellido",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "fecha_nacimiento",
+  "data_type": "date",
+  "is_nullable": "YES"
+}, {
+  "table_name": "usuarios",
+  "column_name": "genero",
+  "data_type": "character varying",
+  "is_nullable": "YES"
+}]
