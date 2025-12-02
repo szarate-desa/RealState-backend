@@ -51,7 +51,7 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ error: 'Credenciales inválidas.' });
     }
 
-    // Crear y firmar un token JWT
+    // Crear y firmar tokens JWT: access token (corto) y refresh token (largo)
     const payload = {
       user: {
         id: user.id,
@@ -62,11 +62,13 @@ router.post('/login', async (req, res) => {
     };
 
     const jwtSecret = process.env.JWT_SECRET || 'YOUR_JWT_SECRET';
+    const accessExpires = process.env.JWT_ACCESS_EXPIRES || '15m'; // Token de acceso: 15 min
+    const refreshExpires = process.env.JWT_REFRESH_EXPIRES || '7d'; // Token de refresh: 7 días
 
-    jwt.sign(payload, jwtSecret, { expiresIn: '1h' }, (err, token) => {
-      if (err) throw err;
-      res.json({ token });
-    });
+    const accessToken = jwt.sign(payload, jwtSecret, { expiresIn: accessExpires });
+    const refreshToken = jwt.sign({ userId: user.id }, jwtSecret, { expiresIn: refreshExpires });
+
+    res.json({ token: accessToken, refreshToken });
 
   } catch (err) {
     console.error(err);
@@ -74,6 +76,81 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// Obtener estadísticas del usuario (contadores para badges)
+router.get('/stats/counts', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Contar propiedades del usuario
+    const propiedadesQuery = `
+      SELECT COUNT(*) as count 
+      FROM propiedad 
+      WHERE id_propietario = $1 
+        AND estado_publicacion != 'archivada'
+    `;
+
+    // Contar favoritos del usuario
+    const favoritosQuery = `
+      SELECT COUNT(*) as count 
+      FROM favoritos 
+      WHERE id_usuario = $1
+    `;
+
+    const [propiedadesResult, favoritosResult] = await Promise.all([
+      pool.query(propiedadesQuery, [userId]),
+      pool.query(favoritosQuery, [userId])
+    ]);
+
+    res.json({
+      myPropertiesCount: parseInt(propiedadesResult.rows[0].count) || 0,
+      favoritesCount: parseInt(favoritosResult.rows[0].count) || 0
+    });
+  } catch (err) {
+    console.error('Error al obtener estadísticas del usuario:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- REFRESH TOKEN ---
+router.post('/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      return res.status(401).json({ error: 'Refresh token requerido.' });
+    }
+
+    const jwtSecret = process.env.JWT_SECRET || 'YOUR_JWT_SECRET';
+    
+    // Verificar el refresh token
+    const decoded = jwt.verify(refreshToken, jwtSecret);
+    const userId = decoded.userId;
+
+    // Obtener datos actualizados del usuario
+    const result = await pool.query('SELECT id, email, nombre, apellido FROM usuarios WHERE id = $1', [userId]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado.' });
+    }
+
+    const user = result.rows[0];
+    const payload = {
+      user: {
+        id: user.id,
+        email: user.email,
+        nombre: user.nombre,
+        apellido: user.apellido
+      }
+    };
+
+    const accessExpires = process.env.JWT_ACCESS_EXPIRES || '15m';
+    const newAccessToken = jwt.sign(payload, jwtSecret, { expiresIn: accessExpires });
+
+    res.json({ token: newAccessToken });
+  } catch (err) {
+    console.error('Error al refrescar token:', err);
+    res.status(401).json({ error: 'Refresh token inválido o expirado.' });
+  }
+});
 
 module.exports = router;
 

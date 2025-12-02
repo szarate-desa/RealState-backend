@@ -21,13 +21,12 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
   fileFilter: (req, file, cb) => {
-    const allowedMimes = ['image/jpeg', 'image/png'];
+    const allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
     if (allowedMimes.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error('Tipo de archivo no válido. Solo se permiten imágenes JPEG y PNG.'), false);
+      cb(new Error('Tipo de archivo no válido. Solo se permiten imágenes JPEG, PNG y WEBP.'), false);
     }
   }
 });
@@ -91,6 +90,130 @@ router.get('/', async (req, res) => {
   }
 });
 
+// ==================== MIS PROPIEDADES ====================
+// IMPORTANTE: Estas rutas deben estar ANTES de '/:id' para evitar conflictos
+
+// Obtener propiedades del usuario autenticado
+router.get('/mis-propiedades', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { estado, tipo, page = 1, limit = 10 } = req.query;
+    const offset = (page - 1) * limit;
+
+    let whereConditions = ['p.id_propietario = $1'];
+    const queryParams = [userId];
+    let paramCount = 1;
+
+    // Filtro por estado
+    if (estado && estado !== 'all') {
+      paramCount++;
+      whereConditions.push(`p.estado_publicacion = $${paramCount}`);
+      queryParams.push(estado);
+    }
+
+    // Filtro por tipo
+    if (tipo && tipo !== 'all') {
+      paramCount++;
+      whereConditions.push(`ct.nombre = $${paramCount}`);
+      queryParams.push(tipo);
+    }
+
+    const whereClause = whereConditions.join(' AND ');
+
+    const query = `
+      WITH ranked_images AS (
+        SELECT 
+          id_propiedad,
+          url_imagen,
+          ROW_NUMBER() OVER(PARTITION BY id_propiedad ORDER BY orden ASC, fecha_creacion ASC) as rn
+        FROM 
+          propiedad_imagenes
+      )
+      SELECT 
+        p.id,
+        p.titulo,
+        p.descripcion,
+        COALESCE(p.precio_venta, p.precio_alquiler) as precio,
+        CASE 
+          WHEN p.precio_venta IS NOT NULL THEN 'Venta'
+          ELSE 'Alquiler'
+        END as tipo_transaccion,
+        p.superficie_total,
+        p.estado_publicacion,
+        p.visitas,
+        p.destacada,
+        p.fecha_creacion,
+        p.fecha_publicacion,
+        p.expira_en,
+        ct.nombre as tipo_inmueble,
+        pu.latitud,
+        pu.longitud,
+        c.nombre as ciudad,
+        d.nombre as departamento,
+        pa.nombre as pais,
+        ri.url_imagen as imagen_principal,
+        (SELECT COUNT(*) FROM favoritos f WHERE f.id_propiedad = p.id) as total_favoritos
+      FROM 
+        propiedad p
+        LEFT JOIN cat_inmueble_tipo ct ON p.id_inmueble_tipo = ct.id
+        LEFT JOIN propiedad_ubicacion pu ON p.id_ubicacion = pu.id
+        LEFT JOIN cat_ciudades c ON pu.id_ciudad = c.id
+        LEFT JOIN cat_departamentos d ON c.id_departamento = d.id
+        LEFT JOIN cat_paises pa ON d.id_pais = pa.id
+        LEFT JOIN ranked_images ri ON p.id = ri.id_propiedad AND ri.rn = 1
+      WHERE ${whereClause}
+      ORDER BY p.fecha_creacion DESC
+      LIMIT $${paramCount + 1} OFFSET $${paramCount + 2}
+    `;
+
+    queryParams.push(limit, offset);
+
+    // Contar total para paginación
+    let countWhereConditions = ['p.id_propietario = $1'];
+    let countParams = [userId];
+    let countParamIndex = 1;
+    
+    if (estado && estado !== 'all') {
+      countParamIndex++;
+      countWhereConditions.push(`p.estado_publicacion = $${countParamIndex}`);
+      countParams.push(estado);
+    }
+    
+    if (tipo && tipo !== 'all') {
+      countParamIndex++;
+      countWhereConditions.push(`ct.nombre = $${countParamIndex}`);
+      countParams.push(tipo);
+    }
+    
+    const countWhereClause = countWhereConditions.join(' AND ');
+    
+    const countQuery = `
+      SELECT COUNT(*) as total
+      FROM propiedad p
+      LEFT JOIN cat_inmueble_tipo ct ON p.id_inmueble_tipo = ct.id
+      WHERE ${countWhereClause}
+    `;
+
+    const [properties, countResult] = await Promise.all([
+      pool.query(query, queryParams),
+      pool.query(countQuery, countParams)
+    ]);
+
+    res.json({
+      properties: properties.rows,
+      pagination: {
+        total: parseInt(countResult.rows[0].total),
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(countResult.rows[0].total / limit)
+      }
+    });
+  } catch (err) {
+    console.error('Error al obtener mis propiedades:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Obtener propiedad por id (ruta pública)
 router.get('/:id', async (req, res) => {
   try {
@@ -139,6 +262,102 @@ router.get('/:id', async (req, res) => {
     }
     res.json(result.rows[0]);
   } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Cambiar estado de una propiedad (Mis Propiedades)
+router.patch('/:id/estado', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { estado } = req.body;
+    const userId = req.user.id;
+
+    // Validar estado
+    const estadosValidos = ['activa', 'pausada', 'borrador', 'archivada'];
+    if (!estado || !estadosValidos.includes(estado)) {
+      return res.status(400).json({ 
+        error: 'Estado inválido. Valores permitidos: activa, pausada, borrador, archivada' 
+      });
+    }
+
+    // Verificar que la propiedad pertenece al usuario
+    const checkQuery = 'SELECT id FROM propiedad WHERE id = $1 AND id_propietario = $2';
+    const checkResult = await pool.query(checkQuery, [id, userId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Propiedad no encontrada o no tienes permisos para modificarla' 
+      });
+    }
+
+    // Actualizar estado
+    const updateQuery = `
+      UPDATE propiedad 
+      SET estado_publicacion = $1, fecha_actualizacion = NOW()
+      WHERE id = $2 
+      RETURNING id, titulo, estado_publicacion
+    `;
+    
+    const result = await pool.query(updateQuery, [estado, id]);
+
+    res.json({ 
+      message: 'Estado actualizado correctamente',
+      propiedad: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Error al actualizar estado:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Obtener estadísticas de una propiedad (Mis Propiedades)
+router.get('/:id/estadisticas', authMiddleware, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const userId = req.user.id;
+
+    // Verificar que la propiedad pertenece al usuario
+    const checkQuery = 'SELECT id FROM propiedad WHERE id = $1 AND id_propietario = $2';
+    const checkResult = await pool.query(checkQuery, [id, userId]);
+
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ 
+        error: 'Propiedad no encontrada o no tienes permisos para ver sus estadísticas' 
+      });
+    }
+
+    // Obtener estadísticas
+    const statsQuery = `
+      SELECT 
+        p.visitas,
+        p.fecha_creacion,
+        p.fecha_publicacion,
+        (SELECT COUNT(*) FROM favoritos f WHERE f.id_propiedad = p.id) as total_favoritos,
+        (SELECT COUNT(*) FROM propiedad_imagenes pi WHERE pi.id_propiedad = p.id) as total_imagenes
+      FROM propiedad p
+      WHERE p.id = $1
+    `;
+
+    const statsResult = await pool.query(statsQuery, [id]);
+    const stats = statsResult.rows[0];
+
+    // Calcular días publicada
+    const diasPublicada = stats.fecha_publicacion 
+      ? Math.floor((Date.now() - new Date(stats.fecha_publicacion).getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
+    res.json({
+      visitas: stats.visitas || 0,
+      favoritos: parseInt(stats.total_favoritos) || 0,
+      imagenes: parseInt(stats.total_imagenes) || 0,
+      diasPublicada,
+      fechaCreacion: stats.fecha_creacion,
+      fechaPublicacion: stats.fecha_publicacion,
+      promedioVistasDiarias: diasPublicada > 0 ? ((stats.visitas || 0) / diasPublicada).toFixed(2) : 0
+    });
+  } catch (err) {
+    console.error('Error al obtener estadísticas:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -196,41 +415,83 @@ router.post('/', authMiddleware, validateProperty, async (req, res) => {
   }
 });
 
-// Actualizar propiedad (ruta desprotegida por ahora)
-router.put('/:id', validateProperty, async (req, res) => {
+// Actualizar propiedad existente (PUT) - Protegida
+router.put('/:id', authMiddleware, validateProperty, async (req, res) => {
+  console.log('--- INICIO ACTUALIZACIÓN DE PROPIEDAD ---');
+  console.log('ID Propiedad:', req.params.id);
+  console.log('Payload recibido:', req.body);
+
   const { id } = req.params;
-  const { 
-    id_inmueble_tipo, id_ciudad, titulo, descripcion, 
-    precio_venta, precio_alquiler, direccion, barrio, codigo_postal, 
-    latitud, longitud, superficie_total, numero_habitaciones, numero_banos
+  const {
+    id_ubicacion,
+    id_inmueble_tipo,
+    titulo,
+    descripcion,
+    precio_venta,
+    precio_alquiler,
+    superficie_total,
+    numero_habitaciones,
+    numero_banos
   } = req.body;
+  const userId = req.user.id;
 
   const client = await pool.connect();
-
   try {
     await client.query('BEGIN');
 
-    const propiedadResult = await client.query(
-      'UPDATE propiedades SET id_inmueble_tipo = $1, id_ciudad = $2, titulo = $3, descripcion = $4, precio_venta = $5, precio_alquiler = $6, direccion = $7, barrio = $8, codigo_postal = $9, latitud = $10, longitud = $11, superficie_total = $12 WHERE id = $13 RETURNING *',
-      [id_inmueble_tipo, id_ciudad, titulo, descripcion, precio_venta, precio_alquiler, direccion, barrio, codigo_postal, latitud, longitud, superficie_total, id]
-    );
+    // Verificar que la propiedad pertenece al usuario
+    const checkQuery = 'SELECT id FROM propiedad WHERE id = $1 AND id_propietario = $2';
+    const checkResult = await client.query(checkQuery, [id, userId]);
 
-    if (propiedadResult.rows.length === 0) {
-      return res.status(404).json({ error: 'Propiedad no encontrada' });
+    if (checkResult.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ 
+        error: 'Propiedad no encontrada o no tienes permisos para modificarla' 
+      });
     }
 
+    console.log('Actualizando propiedad...');
     await client.query(
-      'UPDATE propiedad_detalles SET numero_habitaciones = $1, numero_banos = $2 WHERE id_propiedad = $3',
-      [numero_habitaciones, numero_banos, id]
+      `UPDATE propiedad 
+       SET id_inmueble_tipo = $1, 
+           id_ubicacion = $2, 
+           titulo = $3, 
+           descripcion = $4, 
+           precio_venta = $5, 
+           precio_alquiler = $6, 
+           superficie_total = $7,
+           fecha_actualizacion = NOW()
+       WHERE id = $8`,
+      [id_inmueble_tipo, id_ubicacion, titulo, descripcion, precio_venta, precio_alquiler, superficie_total, id]
     );
+    console.log('Propiedad actualizada.');
+
+    console.log('Actualizando detalles de la propiedad...');
+    // Verificar si existen detalles
+    const detallesCheck = await client.query('SELECT id FROM propiedad_detalles WHERE id_propiedad = $1', [id]);
+    
+    if (detallesCheck.rows.length > 0) {
+      // Actualizar detalles existentes
+      await client.query(
+        'UPDATE propiedad_detalles SET numero_habitaciones = $1, numero_banos = $2 WHERE id_propiedad = $3',
+        [numero_habitaciones, numero_banos, id]
+      );
+    } else {
+      // Insertar nuevos detalles
+      await client.query(
+        'INSERT INTO propiedad_detalles (id_propiedad, numero_habitaciones, numero_banos) VALUES ($1, $2, $3)',
+        [id, numero_habitaciones, numero_banos]
+      );
+    }
+    console.log('Detalles de la propiedad actualizados.');
 
     await client.query('COMMIT');
-    res.json(propiedadResult.rows[0]);
-
+    console.log('--- FIN ACTUALIZACIÓN DE PROPIEDAD ---');
+    res.json({ id, message: 'Propiedad actualizada correctamente' });
   } catch (err) {
     await client.query('ROLLBACK');
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error('Error al actualizar la propiedad:', err);
+    res.status(500).json({ error: 'Error interno del servidor al actualizar la propiedad.' });
   } finally {
     client.release();
   }
@@ -251,39 +512,55 @@ router.delete('/:id', async (req, res) => {
 });
 
 // Subir imágenes para una propiedad
-router.post('/:id/imagenes', [authMiddleware, upload.array('files')], async (req, res) => {
+router.post('/:id/imagenes', authMiddleware, async (req, res) => {
   const { id } = req.params;
-  const files = req.files;
 
-  if (!files || files.length === 0) {
-    return res.status(400).json({ error: 'No se subieron archivos.' });
-  }
-
-  try {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const urls = [];
-      for (const file of files) {
-        const url_imagen = `/uploads/${file.filename}`;
-        const result = await client.query(
-          'INSERT INTO propiedad_imagenes (id_propiedad, url_imagen) VALUES ($1, $2) RETURNING url_imagen',
-          [id, url_imagen]
-        );
-        urls.push(result.rows[0].url_imagen);
+  // Ejecutar multer y capturar errores para responder con 400 en vez de 500
+  upload.array('files')(req, res, async (err) => {
+    if (err) {
+      // Errores de multer (tamaño, límites, etc.)
+      if (err.name === 'MulterError') {
+        let message = 'Error al procesar archivos.';
+        if (err.code === 'LIMIT_FILE_SIZE') message = 'Archivo demasiado grande. Máximo 5MB.';
+        if (err.code === 'LIMIT_UNEXPECTED_FILE') message = 'Campo inesperado. Se esperaba el campo "files".';
+        return res.status(400).json({ error: message });
       }
-      await client.query('COMMIT');
-      res.status(201).json({ urls });
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      // Errores de validación del fileFilter (tipo no permitido)
+      return res.status(400).json({ error: err.message || 'Tipo de archivo no permitido.' });
     }
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: 'Error interno del servidor al subir las imágenes.' });
-  }
+
+    const files = req.files;
+    if (!files || files.length === 0) {
+      return res.status(400).json({ error: 'No se subieron archivos.' });
+    }
+
+    try {
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const urls = [];
+        for (const file of files) {
+          const url_imagen = `/uploads/${file.filename}`;
+          const result = await client.query(
+            'INSERT INTO propiedad_imagenes (id_propiedad, url_imagen) VALUES ($1, $2) RETURNING url_imagen',
+            [id, url_imagen]
+          );
+          urls.push(result.rows[0].url_imagen);
+        }
+        await client.query('COMMIT');
+        return res.status(201).json({ urls });
+      } catch (dbErr) {
+        await client.query('ROLLBACK');
+        console.error('Error insertando imágenes en BD:', dbErr);
+        return res.status(500).json({ error: 'Error interno del servidor al guardar las imágenes.' });
+      } finally {
+        client.release();
+      }
+    } catch (connErr) {
+      console.error('Error obteniendo conexión a BD:', connErr);
+      return res.status(500).json({ error: 'Error interno del servidor al subir las imágenes.' });
+    }
+  });
 });
 
 // CRUD para propiedad_contactos
