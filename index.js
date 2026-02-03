@@ -20,6 +20,7 @@ const categoriasAudioRouter = require('./routes/categorias_audio');
 const procesamientosAudioRouter = require('./routes/procesamientos_audio');
 const iaRouter = require('./routes/ia');
 const propiedadUbicacionRouter = require('./routes/propiedad_ubicacion');
+const aiSearchRouter = require('./routes/aiSearch');
 
 const app = express();
 const port = 3000;
@@ -73,10 +74,12 @@ app.use('/categorias-audio', categoriasAudioRouter);
 app.use('/procesamientos-audio', procesamientosAudioRouter);
 app.use('/ia', iaRouter);
 app.use('/propiedad_ubicacion', propiedadUbicacionRouter);
+app.use('/ai-search', aiSearchRouter);
 
 // ========================
 // Start server
 // ========================
-app.listen(port, () => {
-  console.log(`Servidor escuchando en http://localhost:${port}`);
+app.listen(port, '0.0.0.0', () => {
+  console.log(`Servidor escuchando en http://0.0.0.0:${port}`);
+  console.log(`Accesible desde la red local en http://192.168.100.198:${port}`);
 });

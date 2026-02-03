@@ -497,17 +497,52 @@ router.put('/:id', authMiddleware, validateProperty, async (req, res) => {
   }
 });
 
-// Eliminar propiedad (ruta desprotegida por ahora)
-router.delete('/:id', async (req, res) => {
+// Eliminar propiedad (protegida, elimina registros relacionados en cascada lógica)
+router.delete('/:id', authMiddleware, async (req, res) => {
+  const client = await pool.connect();
   try {
     const { id } = req.params;
-    const result = await pool.query('DELETE FROM propiedades WHERE id = $1 RETURNING *', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Propiedad no encontrada' });
+    const userId = req.user.id;
+
+    await client.query('BEGIN');
+
+    // Verificar existencia y propiedad del recurso
+    const check = await client.query(
+      'SELECT id, id_propietario FROM propiedad WHERE id = $1 AND id_propietario = $2',
+      [id, userId]
+    );
+    if (check.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'Propiedad no encontrada o no tienes permisos para eliminarla' });
     }
-    res.json({ message: 'Propiedad eliminada', propiedad: result.rows[0] });
+
+    // Eliminar dependencias relacionadas
+    const delFavoritos = await client.query('DELETE FROM favoritos WHERE id_propiedad = $1', [id]);
+    const delImagenes = await client.query('DELETE FROM propiedad_imagenes WHERE id_propiedad = $1', [id]);
+    const delContactos = await client.query('DELETE FROM propiedad_contactos WHERE id_propiedad = $1', [id]);
+    const delDetalles = await client.query('DELETE FROM propiedad_detalles WHERE id_propiedad = $1', [id]);
+
+    // Eliminar propiedad principal (tabla correcta: propiedad)
+    const delPropiedad = await client.query('DELETE FROM propiedad WHERE id = $1 RETURNING *', [id]);
+
+    await client.query('COMMIT');
+
+    return res.json({
+      message: 'Propiedad eliminada correctamente',
+      propiedad: delPropiedad.rows[0],
+      eliminados: {
+        favoritos: delFavoritos.rowCount,
+        imagenes: delImagenes.rowCount,
+        contactos: delContactos.rowCount,
+        detalles: delDetalles.rowCount,
+      }
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    console.error('Error al eliminar la propiedad:', err);
+    res.status(500).json({ error: 'Error interno del servidor al eliminar la propiedad.' });
+  } finally {
+    client.release();
   }
 });
 
