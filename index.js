@@ -18,7 +18,7 @@ const imagenesPropiedadesRouter = require('./routes/propiedad_imagenes');
 const favoritosRouter = require('./routes/favoritos');
 const categoriasAudioRouter = require('./routes/categorias_audio');
 const procesamientosAudioRouter = require('./routes/procesamientos_audio');
-const iaRouter = require('./routes/ia');
+const iaRouter = require('./routes/aiGenerate');
 const propiedadUbicacionRouter = require('./routes/propiedad_ubicacion');
 const aiSearchRouter = require('./routes/aiSearch');
 
@@ -72,7 +72,7 @@ app.use('/propiedad-imagenes', imagenesPropiedadesRouter);
 app.use('/favoritos', favoritosRouter);
 app.use('/categorias-audio', categoriasAudioRouter);
 app.use('/procesamientos-audio', procesamientosAudioRouter);
-app.use('/ia', iaRouter);
+app.use('/ai-generate', iaRouter);
 app.use('/propiedad_ubicacion', propiedadUbicacionRouter);
 app.use('/ai-search', aiSearchRouter);
 
